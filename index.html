@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Alpha AI 🤖</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #000;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#chatBox {
+  width: 90%;
+  max-width: 500px;
+  height: 70vh;
+  margin-top: 10px;
+  padding: 10px;
+  background: #111;
+  border-radius: 15px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.user {
+  align-self: flex-end;
+  background: #4CAF50;
+  padding: 10px;
+  border-radius: 15px 15px 0 15px;
+}
+
+.bot {
+  align-self: flex-start;
+  background: gray;
+  padding: 10px;
+  border-radius: 15px 15px 15px 0;
+}
+
+.container {
+  width: 90%;
+  max-width: 500px;
+  display: flex;
+  gap: 5px;
+  margin: 10px 0;
+}
+
+input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+}
+
+button {
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  background: #4CAF50;
+  color: white;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Alpha AI 🤖</h2>
+
+<div id="chatBox"></div>
+
+<div class="container">
+  <button onclick="startVoice()">🎤</button>
+  <input id="userInput" placeholder="Ask me anything...">
+  <button onclick="reply()">Send</button>
+</div>
+
+<script>
+function reply() {
+  let input = document.getElementById("userInput").value;
+  let chatBox = document.getElementById("chatBox");
+
+  if (!input.trim()) return;
+
+  chatBox.innerHTML += `<div class="user">${input}</div>`;
+  document.getElementById("userInput").value = "";
+
+  chatBox.innerHTML += `<div class="bot" id="typing">Thinking...</div>`;
+
+  fetch("https://my-ai-bot-production-9084.up.railway.app/chat", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ message: input })
+  })
+  .then(res => res.json())
+  .then(data => {
+    document.getElementById("typing").remove();
+    chatBox.innerHTML += `<div class="bot">${data.reply}</div>`;
+    chatBox.scrollTop = chatBox.scrollHeight;
+  })
+  .catch(() => {
+    document.getElementById("typing").remove();
+    chatBox.innerHTML += `<div class="bot">Server error 😢</div>`;
+  });
+}
+
+// 🎤 Voice
+function startVoice() {
+  let SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    alert("Voice not supported");
+    return;
+  }
+
+  let recognition = new SpeechRecognition();
+  recognition.lang = "en-US";
+
+  recognition.start();
+
+  recognition.onresult = (event) => {
+    let text = event.results[0][0].transcript;
+    document.getElementById("userInput").value = text;
+    reply();
+  };
+}
+</script>
+
+</body>
+  </html>
