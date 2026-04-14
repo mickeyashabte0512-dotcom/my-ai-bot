@@ -1,4 +1,3 @@
-
 const express = require("express");
 const cors = require("cors");
 
@@ -6,25 +5,49 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 🧠 HOME CHECK
 app.get("/", (req, res) => {
-  res.send("AI Server is running 🚀");
+  res.send("AI Server Running 🚀");
 });
 
+app.post("/chat", async (req, res) => {
 
-// 💬 THIS IS THE IMPORTANT PART 👇
-app.post("/chat", (req, res) => {
+  try {
+    const message = req.body.message;
 
-  const message = req.body.message;
+    const response = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" +
+      process.env.GEMINI_API_KEY,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: message }]
+            }
+          ]
+        })
+      }
+    );
 
-  // simple test reply (you can later connect Gemini here)
-  res.json({
-    reply: "You said: " + message
-  });
+    const data = await response.json();
+
+    const reply =
+      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "No response";
+
+    res.json({ reply });
+
+  } catch (err) {
+    console.log(err);
+    res.json({ reply: "Server error 😢" });
+  }
 
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
+  console.log("Server running...");
 });
