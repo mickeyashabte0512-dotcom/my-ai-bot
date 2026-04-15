@@ -1,7 +1,7 @@
 {
   "name": "ai-backend",
   "version": "1.0.0",
-  "description": "AI Website Backend for Web Design Class",
+  "description": "AI Website Backend",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -12,3 +12,4 @@
     "groq-sdk": "^0.3.3"
   }
 }
+
