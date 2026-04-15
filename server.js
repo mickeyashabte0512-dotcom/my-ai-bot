@@ -8,6 +8,10 @@ app.use(express.json());
 
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+app.get('/', (req, res) => {
+    res.send("<h1>The AI Brain is Awake! 🧠</h1>");
+});
+
 
 app.post('/chat', async (req, res) => {
     try {
