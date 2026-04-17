@@ -3,17 +3,20 @@ const cors = require('cors');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const app = express();
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
+// Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// 1. "Heartbeat" test - Visit your URL in a browser to see this!
+// Heartbeat route to check if server is alive
 app.get('/', (req, res) => {
-    res.send("<h1>Alpha AI is Awake! 🚀</h1>");
+    res.send("Alpha AI Server is Live! 🚀");
 });
 
-// 2. Chat Logic
+// Chat route
 app.post('/chat', async (req, res) => {
     try {
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -21,14 +24,15 @@ app.post('/chat', async (req, res) => {
         const response = await result.response;
         res.json({ reply: response.text() });
     } catch (e) {
-        console.error("Gemini Error:", e.message);
+        console.error("Error:", e.message);
         res.status(500).json({ reply: "Gemini Error: " + e.message });
     }
 });
 
-// 3. THE PORT FIX (Fixes the SIGTERM crash)
+// Use Railway's port
 const port = process.env.PORT || 3000;
 app.listen(port, "0.0.0.0", () => {
     console.log("Server running on port " + port);
 });
+
 
