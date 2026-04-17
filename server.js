@@ -14,14 +14,16 @@ app.get('/', (req, res) => {
 
 app.post('/chat', async (req, res) => {
     try {
-        // FIXED LINE BELOW: Added apiVersion: 'v1beta'
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }, { apiVersion: 'v1beta' });
+        // Updated model call for version 0.11.0+
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         
         const result = await model.generateContent(req.body.message);
         const response = await result.response;
-        res.json({ reply: response.text() });
+        const text = response.text();
+        
+        res.json({ reply: text });
     } catch (e) {
-        console.error("Error:", e.message);
+        console.error("Error details:", e);
         res.status(500).json({ reply: "Gemini Error: " + e.message });
     }
 });
@@ -30,4 +32,5 @@ const port = process.env.PORT || 3000;
 app.listen(port, "0.0.0.0", () => {
     console.log("Server running on port " + port);
 });
+
 
