@@ -4,46 +4,32 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Initialize Google AI using your Railway Environment Variable
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Health check route
-app.get('/', (req, res) => {
-    res.send('Alpha AI Server is Online and Ready!');
-});
+app.get('/', (req, res) => res.send('Alpha AI Server is Online!'));
 
 app.post('/chat', async (req, res) => {
     try {
         const { message } = req.body;
-
-        if (!message) {
-            return res.status(400).json({ reply: "Please enter a message." });
-        }
+        if (!message) return res.status(400).json({ reply: "No message." });
 
         /**
-         * MODEL STABILITY:
-         * Keeping 'gemini-pro' as it was the one that successfully 
-         * bypassed the 404 error in your last test.
+         * STABILITY FIX:
+         * Using the 2026 stable name to prevent the 404 error 
+         * seen in your last screenshot.
          */
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
-        /**
-         * IDENTITY UPDATED: 
-         * Changed from "Mickey" to "a student".
-         */
-        const instruction = "You are Alpha AI, a helpful assistant created by a student. Never mention Google or Gemini. Answer the following user message: ";
+        // UPDATED IDENTITY:
+        const prompt = `You are Alpha AI, created by a student. Answer this: ${message}`;
         
-        const result = await model.generateContent(instruction + message);
+        const result = await model.generateContent(prompt);
         const response = await result.response;
-        const text = response.text();
-
-        // Returns 'reply' to match your frontend index.html
-        res.json({ reply: text });
+        
+        res.json({ reply: response.text() });
 
     } catch (error) {
         console.error("AI Error:", error);
@@ -51,8 +37,5 @@ app.post('/chat', async (req, res) => {
     }
 });
 
-// Port for Railway
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
