@@ -4,47 +4,43 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-
-// Middleware
 app.use(cors());
 app.use(express.json());
 
 // Initialize AI with your Railway API Key
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Basic route to check if server is live
-app.get('/', (req, res) => res.send('Alpha AI Server is Online!'));
+app.get('/', (req, res) => res.send('Alpha AI Server is Awake!'));
 
 app.post('/chat', async (req, res) => {
     try {
         const { message } = req.body;
-        if (!message) return res.status(400).json({ reply: "Please enter a message." });
+        if (!message) return res.status(400).json({ reply: "No message sent." });
 
         /**
-         * STABILITY FIX: 
-         * Using 'gemini-pro' instead of 'gemini-1.5-flash' to avoid the 404 error.
+         * THE FIX: 
+         * Changing 'gemini-1.5-flash' to 'gemini-pro' stops the 404 error.
          */
         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-        // IDENTITY FIX: Keeping your custom name
-        const systemInstruction = "You are Alpha AI, a helpful assistant created by Mickey. Never mention Google or Gemini. Answer this user: ";
+        // Keeping your custom name and creator info
+        const instruction = "Your name is Alpha AI. You were created by Mickey. Answer this user as Alpha AI: ";
         
-        const result = await model.generateContent(systemInstruction + message);
+        const result = await model.generateContent(instruction + message);
         const response = await result.response;
         const text = response.text();
 
-        // Sending back 'reply' to match your index.html exactly
+        // Sending 'reply' so the frontend can read it
         res.json({ reply: text });
 
     } catch (error) {
-        console.error("Server Error:", error);
-        // This will display the exact error in your chat bubble so we can see it
+        console.error("AI Error:", error);
+        // This will tell us if there's a different problem (like API key)
         res.json({ reply: "Alpha AI Error: " + error.message });
     }
 });
 
-// Port for Railway
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Alpha AI is running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
