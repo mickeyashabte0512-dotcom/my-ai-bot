@@ -7,26 +7,31 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Set up the AI
+// Safety check for API Key
+if (!process.env.GEMINI_API_KEY) {
+    console.error("CRITICAL ERROR: GEMINI_API_KEY is missing in Railway Variables!");
+}
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-app.get('/', (req, res) => res.send('Alpha AI Server is Awake!'));
-
 app.post('/chat', async (req, res) => {
-  try {
-    const { message } = req.body;
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    
-    // We stick the identity right into the prompt
-    const prompt = `User says: ${message}. (Remember: Your name is Alpha AI, created by Mickey. Answer as Alpha.)`;
-    
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    res.json({ reply: response.text() });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+    try {
+        const { message } = req.body;
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        // Hidden instruction to ensure identity
+        const prompt = `System: Your name is Alpha AI, created by Mickey. Never mention Gemini or Google. User says: ${message}`;
+        
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        res.json({ reply: response.text() });
+    } catch (error) {
+        console.error("AI Error:", error.message);
+        res.status(500).json({ error: "The AI brain is having trouble." });
+    }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
+app.listen(PORT, () => {
+    console.log(`Alpha AI is live on port ${PORT}`);
+});
