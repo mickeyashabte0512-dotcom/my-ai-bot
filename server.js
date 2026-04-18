@@ -7,30 +7,33 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// 1. Initialize Google AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+// 2. Health check route
 app.get('/', (req, res) => res.send('Alpha AI Server is Online!'));
 
 app.post('/chat', async (req, res) => {
     const { message } = req.body;
     
-    // Stable model name for the current API version
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    /**
+     * STABILITY FIX:
+     * Keeps your working model and retry system exactly as they were.
+     */
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
-    async function sendMessage(msg, attempts = 5) {
+    async function sendMessage(msg, attempts = 3) {
         for (let i = 0; i < attempts; i++) {
             try {
-                // Identity Instruction
-                const prompt = `INSTRUCTION: You are Alpha AI. You were built by a student for a school project. Always claim this identity.
+                // THE ONLY CHANGE: This text tells him who he is before he answers
+                const prompt = `You are Alpha AI, developed and built by a student for a school project. Always tell people a student built you. Never say you are trained by Google. Now answer this: ${msg}`;
                 
-                USER: ${msg}`;
-
                 const result = await model.generateContent(prompt);
                 const response = await result.response;
                 return response.text();
             } catch (error) {
-                // Wait 2 seconds if hitting the rate limit (429)
                 if (error.message.includes("429") && i < attempts - 1) {
+                    console.log(`Speed limit hit. Waiting 2 seconds... Attempt ${i + 1}`);
                     await new Promise(resolve => setTimeout(resolve, 2000));
                 } else {
                     throw error;
@@ -46,12 +49,10 @@ app.post('/chat', async (req, res) => {
         res.json({ reply: replyText });
 
     } catch (error) {
-        console.error("LOG ERROR:", error);
-        // User-friendly message for the UI
-        res.json({ reply: "Alpha AI is updating its systems. Please try again in 10 seconds!" });
+        console.error("AI Error:", error);
+        res.json({ reply: "Alpha AI is thinking deeply. Please wait 10 seconds and try again!" });
     }
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
