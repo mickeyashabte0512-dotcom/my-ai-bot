@@ -7,11 +7,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Initialize the API
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// FIXED MODEL NAME HERE
+// Use the exact model name "gemini-1.5-flash"
 const model = genAI.getGenerativeModel({ 
-    model: "gemini-1.5-flash-latest", 
+    model: "gemini-1.5-flash",
     systemInstruction: "Your name is Alpha AI Student. You are a helpful educational assistant built by a student."
 });
 
@@ -22,13 +23,26 @@ app.get("/", (req, res) => {
 app.post("/chat", async (req, res) => {
     try {
         const { message, history } = req.body;
-        const chat = model.startChat({ history: history || [] });
+        
+        // Start chat with the model
+        const chat = model.startChat({
+            history: history || [],
+        });
+
         const result = await chat.sendMessage(message);
         const response = await result.response;
-        res.json({ reply: response.text() });
+        const text = response.text();
+
+        res.json({ reply: text });
     } catch (error) {
-        console.error("Error:", error);
-        res.status(500).json({ reply: "I'm having trouble connecting to my brain. Try again!" });
+        console.error("DETAILED ERROR:", error);
+        
+        // Specific error for 429 Rate Limit
+        if (error.status === 429) {
+            return res.status(429).json({ reply: "Alpha AI is thinking deeply. Please wait 10 seconds!" });
+        }
+        
+        res.status(500).json({ reply: "I'm having trouble connecting to my brain. Check your API key!" });
     }
 });
 
