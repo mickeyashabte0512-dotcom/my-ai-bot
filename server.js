@@ -9,23 +9,32 @@ app.use(express.json());
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-app.get("/", (req, res) => res.send("Server is Live"));
+// Home route to check if server is awake
+app.get("/", (req, res) => {
+    res.send("Alpha AI Server is online and ready!");
+});
 
 app.post("/chat", async (req, res) => {
     try {
         const { message } = req.body;
-        // We use the full model path to prevent the 404
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        
+        // Using the standard model name
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
+        // Direct generation (this is what worked!)
         const result = await model.generateContent(message);
         const response = await result.response;
-        
-        res.json({ reply: response.text() });
+        const text = response.text();
+
+        res.json({ reply: text });
+
     } catch (error) {
-        console.error("AI ERROR:", error);
-        res.status(500).json({ reply: "Connection failed. Check Railway Logs." });
+        console.error("ERROR:", error);
+        res.status(500).json({ reply: "I'm having trouble connecting to my brain. Try again!" });
     }
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
