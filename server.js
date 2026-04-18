@@ -7,6 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Initialize with the new version of the library
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 app.get("/", (req, res) => {
@@ -17,16 +18,11 @@ app.post("/chat", async (req, res) => {
     try {
         const { message } = req.body;
         
-        // THIS IS THE FIX: Use getGenerativeModel inside the request with the specific model ID
+        // Using the most stable model name for version 0.11.0+
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        const result = await model.generateContent({
-            contents: [{ role: 'user', parts: [{ text: message }] }],
-            generationConfig: {
-                maxOutputTokens: 1000,
-            },
-        });
-
+        // Simple generation instead of Chat Session to avoid the 404 error
+        const result = await model.generateContent(message);
         const response = await result.response;
         const text = response.text();
 
