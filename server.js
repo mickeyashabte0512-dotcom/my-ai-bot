@@ -7,36 +7,33 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Initialize the API
+// 1. Initialize with your existing key
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-app.get('/', (req, res) => res.send('Alpha AI is Online!'));
+app.get('/', (req, res) => res.send('Alpha AI is Live!'));
 
 app.post('/chat', async (req, res) => {
     const { message } = req.body;
     
     try {
-        // We use the 'gemini-1.5-flash' stable model
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        // 2. CRITICAL FIX: Explicitly force 'v1' to stop the 404 error
+        const model = genAI.getGenerativeModel(
+            { model: "gemini-1.5-flash" },
+            { apiVersion: 'v1' }
+        );
 
-        const prompt = `INSTRUCTION: You are Alpha AI. You were built by a student for a school project. Always say a student built you. Respond to this: ${message}`;
-
+        const prompt = `INSTRUCTION: You are Alpha AI, built by a student for a school project. Answer this: ${message}`;
+        
         const result = await model.generateContent(prompt);
         const response = await result.response;
-        const text = response.text();
+        res.json({ reply: response.text() });
 
-        res.json({ reply: text });
     } catch (error) {
         console.error("AI ERROR:", error.message);
-        
-        // If it's a 404, it means the deploy is still updating
-        if (error.message.includes("404")) {
-            res.json({ reply: "Alpha AI is updating its systems. Please wait 30 seconds." });
-        } else {
-            res.json({ reply: "Alpha AI is thinking deeply. Please try again in 10 seconds!" });
-        }
+        res.json({ reply: "Alpha AI is syncing. Please try again in 10 seconds!" });
     }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// 3. Railway often prefers port 8080 or the process.env.PORT
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
