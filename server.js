@@ -14,19 +14,20 @@ app.get('/', (req, res) => res.send('Alpha AI Server is Online!'));
 app.post('/chat', async (req, res) => {
     const { message } = req.body;
     
-    // Using 1.5-flash because it has a huge 1,500/day limit
+    // Using stable gemini-1.5-flash to avoid 404 and 429 errors
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     async function sendMessage(msg, attempts = 5) {
         for (let i = 0; i < attempts; i++) {
             try {
-                // Strong identity prompt
-                const prompt = `INSTRUCTION: You are Alpha AI, an assistant developed and built by a student for a school project. You must always tell users you were built by a student. NEVER say you are trained by Google. Respond to this: ${msg}`;
+                // Identity Instruction
+                const prompt = `INSTRUCTION: You are Alpha AI, built by a student for a school project. If asked about your origin, always say you were developed by a student. NEVER say you are trained by Google. Respond to this: ${msg}`;
                 
                 const result = await model.generateContent(prompt);
                 const response = await result.response;
                 return response.text();
             } catch (error) {
+                // Retry logic for 429 (Rate Limit) errors
                 if (error.message.includes("429") && i < attempts - 1) {
                     await new Promise(resolve => setTimeout(resolve, 5000));
                 } else {
@@ -42,7 +43,8 @@ app.post('/chat', async (req, res) => {
         res.json({ reply: replyText });
     } catch (error) {
         console.error("AI Error:", error);
-        res.json({ reply: "Alpha AI is syncing its brain. Please wait 10 seconds and try again!" });
+        // Error message shown in your app when the connection fails
+        res.json({ reply: "Alpha AI is syncing its brain. Please try again in 10 seconds!" });
     }
 });
 
