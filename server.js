@@ -10,25 +10,27 @@ app.use(express.json());
 // 1. Initialize Google AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// 2. Health check route
+// 2. Health check route - Fixes the "Cannot GET /" error
 app.get('/', (req, res) => res.send('Alpha AI Server is Online!'));
 
 app.post('/chat', async (req, res) => {
     const { message } = req.body;
     
     /**
-     * STABILITY FIX (APRIL 2026):
-     * Using 'gemini-2.5-flash-lite' because it offers the most 
-     * reliable free-tier quota (15 requests per minute).
+     * STABILITY FIX:
+     * Using 'gemini-2.5-flash-lite' as per our working version.
      */
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
-    // RE-TRY SYSTEM: This catches the 429 error and waits 2 seconds
+    // RE-TRY SYSTEM: Catches the 429 error and waits 2 seconds
     async function sendMessage(msg, attempts = 3) {
         for (let i = 0; i < attempts; i++) {
             try {
-                // Identity Instruction: Super short to save "Token Quota"
-                const prompt = `AI by Student. Respond to this: ${msg}`;
+                // IDENTITY FIX: We force the student identity into the prompt itself
+                const prompt = `INSTRUCTION: Your name is Alpha AI. You were developed and built by a student as a professional school project. If asked about your creator, always say you were built by a student. NEVER say you are trained by Google.
+                
+                USER MESSAGE: ${msg}`;
+
                 const result = await model.generateContent(prompt);
                 const response = await result.response;
                 return response.text();
@@ -52,7 +54,7 @@ app.post('/chat', async (req, res) => {
 
     } catch (error) {
         console.error("AI Error:", error);
-        // User-friendly error message for your presentation
+        // This is the message the user sees if the connection fails
         res.json({ reply: "Alpha AI is thinking deeply. Please wait 10 seconds and try again!" });
     }
 });
