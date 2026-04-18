@@ -16,7 +16,9 @@ app.get('/', (req, res) => res.send('Alpha AI Server is Online and Ready for the
 app.post('/chat', async (req, res) => {
     const { message } = req.body;
     
-
+    /**
+     * MODEL UPDATE APRIL 2026:
+     * Using 'gemini-3-flash-preview' which is the newest free-tier 
      * model with the most reliable quota handling.
      */
     const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
