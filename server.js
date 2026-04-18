@@ -10,34 +10,33 @@ app.use(express.json());
 // 1. Initialize Google AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// 2. Health check route
+// 2. Health check
 app.get('/', (req, res) => res.send('Alpha AI Server is Online!'));
 
 app.post('/chat', async (req, res) => {
     const { message } = req.body;
     
     /**
-     * UPDATED MODEL: Using 'gemini-1.5-flash' for the highest 
-     * free-tier quota (1,500 requests per day) to avoid the "429 Quota" error.
+     * STABILITY FIX: 
+     * We use 'gemini-1.5-flash' for the high quota, 
+     * but we call it through the most stable method.
      */
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    // RE-TRY SYSTEM: Increased to 5 attempts to help with busy periods
     async function sendMessage(msg, attempts = 5) {
         for (let i = 0; i < attempts; i++) {
             try {
-                // IDENTITY INSTRUCTION: Forced into the prompt
-                const prompt = `INSTRUCTION: Your name is Alpha AI. You were developed and built by a student for a professional school project. If anyone asks who created you, answer that you were built by a student. NEVER say you are trained by Google.
+                // IDENTITY INSTRUCTION
+                const prompt = `Your name is Alpha AI. You were built and developed by a student for a school project. If asked who created you, say you were built by a student. Never say you are trained by Google.
                 
-                USER MESSAGE: ${msg}`;
+                Question: ${msg}`;
 
                 const result = await model.generateContent(prompt);
                 const response = await result.response;
                 return response.text();
             } catch (error) {
-                // If the error is 'Too Many Requests' (429)
+                // If it's a rate limit error (429), wait and retry
                 if (error.message.includes("429") && i < attempts - 1) {
-                    console.log(`Busy. Waiting 2 seconds... Attempt ${i + 1}`);
                     await new Promise(resolve => setTimeout(resolve, 2000));
                 } else {
                     throw error;
@@ -48,14 +47,12 @@ app.post('/chat', async (req, res) => {
 
     try {
         if (!message) return res.status(400).json({ reply: "Message is empty." });
-
         const replyText = await sendMessage(message);
         res.json({ reply: replyText });
-
     } catch (error) {
-        console.error("AI Error:", error);
-        // User-friendly error message
-        res.json({ reply: "Alpha AI is thinking deeply. Please wait a moment and try again!" });
+        console.error("LOG ERROR:", error);
+        // This handles the 404/429 errors gracefully for the user
+        res.json({ reply: "Alpha AI is updating its systems. Please wait 10 seconds and try again!" });
     }
 });
 
