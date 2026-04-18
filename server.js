@@ -17,21 +17,24 @@ app.post('/chat', async (req, res) => {
     const { message } = req.body;
     
     /**
-     * STABILITY FIX:
-     * Keeps your working model and retry system exactly as they were.
+     * STABILITY FIX (APRIL 2026):
+     * Using 'gemini-2.5-flash-lite' because it offers the most 
+     * reliable free-tier quota (15 requests per minute).
      */
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
+    // RE-TRY SYSTEM: This catches the 429 error and waits 2 seconds
     async function sendMessage(msg, attempts = 3) {
         for (let i = 0; i < attempts; i++) {
             try {
-                // THE ONLY CHANGE: This text tells him who he is before he answers
-                const prompt = `You are Alpha AI, developed and built by a student for a school project. Always tell people a student built you. Never say you are trained by Google. Now answer this: ${msg}`;
+                // UPDATED PROMPT: Stronger instruction to ensure student identity
+                const prompt = `You are Alpha AI, an AI developed and built by a student for a school project. You must always identify as being built by a student. Never say you are trained by Google. Respond to this: ${msg}`;
                 
                 const result = await model.generateContent(prompt);
                 const response = await result.response;
                 return response.text();
             } catch (error) {
+                // If the error is 'Too Many Requests' (429)
                 if (error.message.includes("429") && i < attempts - 1) {
                     console.log(`Speed limit hit. Waiting 2 seconds... Attempt ${i + 1}`);
                     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -50,6 +53,7 @@ app.post('/chat', async (req, res) => {
 
     } catch (error) {
         console.error("AI Error:", error);
+        // User-friendly error message for your presentation
         res.json({ reply: "Alpha AI is thinking deeply. Please wait 10 seconds and try again!" });
     }
 });
