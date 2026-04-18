@@ -27,9 +27,8 @@ app.post('/chat', async (req, res) => {
     async function sendMessage(msg, attempts = 3) {
         for (let i = 0; i < attempts; i++) {
             try {
-                // UPDATED PROMPT: Stronger instruction to ensure student identity
-                const prompt = `You are Alpha AI, an AI developed and built by a student for a school project. You must always identify as being built by a student. Never say you are trained by Google. Respond to this: ${msg}`;
-                
+                // Identity Instruction: Super short to save "Token Quota"
+                const prompt = `AI by Student. Respond to this: ${msg}`;
                 const result = await model.generateContent(prompt);
                 const response = await result.response;
                 return response.text();
