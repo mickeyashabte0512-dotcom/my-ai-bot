@@ -9,25 +9,31 @@ app.use(express.json());
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// CHANGE THIS LINE TO gemini-pro
-const model = genAI.getGenerativeModel({ 
-    model: "gemini-pro", 
-    systemInstruction: "Your name is Alpha AI Student. You are a helpful educational assistant built by a student."
-});
-
 app.get("/", (req, res) => {
-    res.send("Alpha AI Server is online and ready!");
+    res.send("Alpha AI Server is online!");
 });
 
 app.post("/chat", async (req, res) => {
     try {
-        const { message, history } = req.body;
-        const chat = model.startChat({ history: history || [] });
-        const result = await chat.sendMessage(message);
+        const { message } = req.body;
+        
+        // THIS IS THE FIX: Use getGenerativeModel inside the request with the specific model ID
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        const result = await model.generateContent({
+            contents: [{ role: 'user', parts: [{ text: message }] }],
+            generationConfig: {
+                maxOutputTokens: 1000,
+            },
+        });
+
         const response = await result.response;
-        res.json({ reply: response.text() });
+        const text = response.text();
+
+        res.json({ reply: text });
+
     } catch (error) {
-        console.error("SERVER ERROR:", error);
+        console.error("LOG ERROR:", error);
         res.status(500).json({ reply: "I'm having trouble connecting to my brain. Try again!" });
     }
 });
