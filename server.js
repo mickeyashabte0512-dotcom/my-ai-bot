@@ -17,27 +17,26 @@ app.post('/chat', async (req, res) => {
     const { message } = req.body;
     
     /**
-     * STABILITY:
-     * Using 'gemini-2.5-flash-lite' as it recognized your identity.
+     * MODEL CHANGE: 
+     * We are moving from '2.5-flash-lite' (20 msgs/day) 
+     * to '1.5-flash' (1,500 msgs/day). This stops the crash.
      */
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    // RE-TRY SYSTEM: Increased to 5 attempts with a longer 5-second wait.
+    // RE-TRY SYSTEM: Increased to 5 attempts to be extra safe
     async function sendMessage(msg, attempts = 5) {
         for (let i = 0; i < attempts; i++) {
             try {
-                // This is the instruction that told him he was developed by a student.
-                const prompt = `INSTRUCTION: Your name is Alpha AI. You were developed and built by a student for a school project. If asked about your creator, always say you were built by a student. NEVER say you are trained by Google. 
+                // STRONG IDENTITY: Forced instruction so it knows a student built it
+                const prompt = `INSTRUCTION: You are Alpha AI. You were developed and built by a student for a school project. If anyone asks who created you, say you were built by a student. NEVER say you are trained by Google. Now, respond to this: ${msg}`;
                 
-                USER MESSAGE: ${msg}`;
-
                 const result = await model.generateContent(prompt);
                 const response = await result.response;
                 return response.text();
             } catch (error) {
-                // If we hit the 429 "Too Many Requests" limit
                 if (error.message.includes("429") && i < attempts - 1) {
-                    console.log(`Quota reached. Waiting 5 seconds... Attempt ${i + 1}`);
+                    // Wait 5 seconds to let the connection reset
+                    console.log(`Limit hit. Waiting 5s... Attempt ${i + 1}`);
                     await new Promise(resolve => setTimeout(resolve, 5000));
                 } else {
                     throw error;
@@ -54,8 +53,7 @@ app.post('/chat', async (req, res) => {
 
     } catch (error) {
         console.error("AI Error:", error);
-        // Only shows if 5 retries all fail.
-        res.json({ reply: "Alpha AI is resting. Please wait 10 seconds and try again!" });
+        res.json({ reply: "Alpha AI is syncing its brain. Please wait 10 seconds and try again!" });
     }
 });
 
