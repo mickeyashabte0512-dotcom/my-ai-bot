@@ -14,22 +14,21 @@ app.get('/', (req, res) => res.send('Alpha AI Server is Online!'));
 app.post('/chat', async (req, res) => {
     const { message } = req.body;
     
-    // Using stable gemini-1.5-flash to avoid 404 and 429 errors
+    // FORCING 1.5-FLASH FOR 1,500 REQS/DAY
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    async function sendMessage(msg, attempts = 5) {
+    async function sendMessage(msg, attempts = 3) {
         for (let i = 0; i < attempts; i++) {
             try {
-                // Identity Instruction
-                const prompt = `INSTRUCTION: You are Alpha AI, built by a student for a school project. If asked about your origin, always say you were developed by a student. NEVER say you are trained by Google. Respond to this: ${msg}`;
+                const prompt = `INSTRUCTION: You are Alpha AI, built by a student. Always say a student built you. NEVER say Google. USER: ${msg}`;
                 
                 const result = await model.generateContent(prompt);
                 const response = await result.response;
                 return response.text();
             } catch (error) {
-                // Retry logic for 429 (Rate Limit) errors
                 if (error.message.includes("429") && i < attempts - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 5000));
+                    console.log("Quota hit. Retrying in 6 seconds...");
+                    await new Promise(resolve => setTimeout(resolve, 6000));
                 } else {
                     throw error;
                 }
@@ -42,11 +41,10 @@ app.post('/chat', async (req, res) => {
         const replyText = await sendMessage(message);
         res.json({ reply: replyText });
     } catch (error) {
-        console.error("AI Error:", error);
-        // Error message shown in your app when the connection fails
-        res.json({ reply: "Alpha AI is syncing its brain. Please try again in 10 seconds!" });
+        console.error("AI CRASH LOG:", error.message);
+        res.json({ reply: "Alpha AI is restarting. Please wait 10 seconds!" });
     }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server Online - Model: Gemini 1.5 Flash` ));
