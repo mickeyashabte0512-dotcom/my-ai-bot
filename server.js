@@ -17,31 +17,28 @@ app.post('/chat', async (req, res) => {
     const { message } = req.body;
     
     /**
-     * STABILITY FIX (APRIL 2026):
-     * Using 'gemini-2.5-flash-lite' as per your working version.
+     * STABILITY:
+     * Using 'gemini-2.5-flash-lite' as it recognized your identity.
      */
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
-    // RE-TRY SYSTEM: This specifically stops the 429 "Too Many Requests" error
-    async function sendMessage(msg, attempts = 3) {
+    // RE-TRY SYSTEM: Increased to 5 attempts with a longer 5-second wait.
+    async function sendMessage(msg, attempts = 5) {
         for (let i = 0; i < attempts; i++) {
             try {
-                /**
-                 * IDENTITY INSTRUCTION: 
-                 * Combined with user message to force the AI to remember 
-                 * it was built by a student for a school project.
-                 */
-                const prompt = `Your name is Alpha AI. You were developed and built by a student for a school project. If asked about your creator, you MUST say you were built by a student. NEVER say you are trained by Google. Respond to this: ${msg}`;
+                // This is the instruction that told him he was developed by a student.
+                const prompt = `INSTRUCTION: Your name is Alpha AI. You were developed and built by a student for a school project. If asked about your creator, always say you were built by a student. NEVER say you are trained by Google. 
                 
+                USER MESSAGE: ${msg}`;
+
                 const result = await model.generateContent(prompt);
                 const response = await result.response;
                 return response.text();
             } catch (error) {
-                // If the error is 'Too Many Requests' (429)
+                // If we hit the 429 "Too Many Requests" limit
                 if (error.message.includes("429") && i < attempts - 1) {
-                    // Increased wait time to 4 seconds to ensure the quota resets
-                    console.log(`Speed limit hit. Waiting 4 seconds... Attempt ${i + 1}`);
-                    await new Promise(resolve => setTimeout(resolve, 4000));
+                    console.log(`Quota reached. Waiting 5 seconds... Attempt ${i + 1}`);
+                    await new Promise(resolve => setTimeout(resolve, 5000));
                 } else {
                     throw error;
                 }
@@ -57,8 +54,8 @@ app.post('/chat', async (req, res) => {
 
     } catch (error) {
         console.error("AI Error:", error);
-        // This triggers the message you saw in your screenshot
-        res.json({ reply: "Alpha AI is thinking deeply. Please wait 10 seconds and try again!" });
+        // Only shows if 5 retries all fail.
+        res.json({ reply: "Alpha AI is resting. Please wait 10 seconds and try again!" });
     }
 });
 
