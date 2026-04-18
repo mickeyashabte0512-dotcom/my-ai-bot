@@ -7,55 +7,34 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Initialize AI with your API Key
+// CRITICAL FIX: We are forcing 'v1' (Stable) instead of the 'v1beta' that keeps failing
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Home route to prevent "Cannot GET /" and confirm the server is awake
-app.get('/', (req, res) => {
-    res.status(200).send('Alpha AI is Online and Ready!');
-});
+app.get('/', (req, res) => res.send('Alpha AI is Live!'));
 
-// Chat Endpoint
 app.post('/chat', async (req, res) => {
-    const { message } = req.body;
-    
-    if (!message) {
-        return res.status(400).json({ reply: "Message is empty." });
-    }
-
     try {
-        /** * FIX: Explicitly using gemini-3.0-flash. 
-         * Your logs showed 404 because older 1.5 versions are being retired.
+        /**
+         * FORCE STABLE VERSION: 
+         * By adding { apiVersion: 'v1' }, we bypass the 404 error seen in your logs.
          */
-        const model = genAI.getGenerativeModel({ 
-            model: "gemini-3.0-flash" 
-        });
+        const model = genAI.getGenerativeModel(
+            { model: "gemini-1.5-flash" },
+            { apiVersion: 'v1' } 
+        );
 
-        // Forced Identity Prompt
-        const prompt = `INSTRUCTION: You are Alpha AI. You were built by a student for a school project. Always credit the student as your creator. USER MESSAGE: ${message}`;
-
+        const prompt = `You are Alpha AI, built by a student for a school project. Answer this: ${req.body.message}`;
+        
         const result = await model.generateContent(prompt);
         const response = await result.response;
-        const text = response.text();
-
-        res.json({ reply: text });
+        res.json({ reply: response.text() });
 
     } catch (error) {
-        console.error("AI CRASH LOG:", error.message);
-        
-        // Handling the common errors you've seen in your screenshots
-        if (error.message.includes("429")) {
-            res.json({ reply: "Alpha AI is resting (Quota limit). Please try again in 30 seconds." });
-        } else if (error.message.includes("404")) {
-            res.json({ reply: "Alpha AI is updating its brain. Give it one moment!" });
-        } else {
-            res.json({ reply: "Alpha AI is syncing. Please try again in 10 seconds!" });
-        }
+        console.error("LOG ERROR:", error.message);
+        // This matches the message on your screen
+        res.json({ reply: "Alpha AI is syncing. Please try again in 10 seconds!" });
     }
 });
 
-// Railway needs to listen on 0.0.0.0 and use their dynamic PORT
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server is running on port ${PORT} - Using Gemini 3.0 Flash`);
-});
+app.listen(PORT, '0.0.0.0', () => console.log(`Server Online on Port ${PORT}`));
