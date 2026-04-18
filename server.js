@@ -17,23 +17,18 @@ app.post('/chat', async (req, res) => {
     const { message } = req.body;
     
     /**
-     * STABILITY FIX:
-     * Using 'gemini-2.5-flash-lite' as it is the current stable model
-     * for developers as of April 2026.
+     * UPDATED MODEL: Using 'gemini-1.5-flash' for the highest 
+     * free-tier quota (1,500 requests per day) to avoid the "429 Quota" error.
      */
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    // RE-TRY SYSTEM: This was the key to fixing the 429 and "brain connection" errors
-    async function sendMessage(msg, attempts = 3) {
+    // RE-TRY SYSTEM: Increased to 5 attempts to help with busy periods
+    async function sendMessage(msg, attempts = 5) {
         for (let i = 0; i < attempts; i++) {
             try {
-                /**
-                 * IDENTITY INSTRUCTION:
-                 * We force the instruction into the message to ensure 
-                 * it doesn't default back to "I am a model by Google."
-                 */
-                const prompt = `INSTRUCTION: You are Alpha AI. You were built and developed by a student for a professional school project. If asked about your origin or creator, you must say you were developed by a student. Never claim to be trained by Google.
-
+                // IDENTITY INSTRUCTION: Forced into the prompt
+                const prompt = `INSTRUCTION: Your name is Alpha AI. You were developed and built by a student for a professional school project. If anyone asks who created you, answer that you were built by a student. NEVER say you are trained by Google.
+                
                 USER MESSAGE: ${msg}`;
 
                 const result = await model.generateContent(prompt);
@@ -42,7 +37,7 @@ app.post('/chat', async (req, res) => {
             } catch (error) {
                 // If the error is 'Too Many Requests' (429)
                 if (error.message.includes("429") && i < attempts - 1) {
-                    console.log(`Rate limit hit. Waiting 2 seconds... Attempt ${i + 1}`);
+                    console.log(`Busy. Waiting 2 seconds... Attempt ${i + 1}`);
                     await new Promise(resolve => setTimeout(resolve, 2000));
                 } else {
                     throw error;
@@ -59,8 +54,8 @@ app.post('/chat', async (req, res) => {
 
     } catch (error) {
         console.error("AI Error:", error);
-        // This is the message shown in your previous troubleshoot
-        res.json({ reply: "Alpha AI is thinking deeply. Please wait 10 seconds and try again!" });
+        // User-friendly error message
+        res.json({ reply: "Alpha AI is thinking deeply. Please wait a moment and try again!" });
     }
 });
 
