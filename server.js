@@ -10,7 +10,7 @@ app.use(express.json());
 // 1. Initialize Google AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// 2. Health check route - Fixes the "Cannot GET /" error
+// 2. Health check route
 app.get('/', (req, res) => res.send('Alpha AI Server is Online!'));
 
 app.post('/chat', async (req, res) => {
@@ -18,17 +18,22 @@ app.post('/chat', async (req, res) => {
     
     /**
      * STABILITY FIX:
-     * Using 'gemini-2.5-flash-lite' as per our working version.
+     * Using 'gemini-2.5-flash-lite' as it is the current stable model
+     * for developers as of April 2026.
      */
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
-    // RE-TRY SYSTEM: Catches the 429 error and waits 2 seconds
+    // RE-TRY SYSTEM: This was the key to fixing the 429 and "brain connection" errors
     async function sendMessage(msg, attempts = 3) {
         for (let i = 0; i < attempts; i++) {
             try {
-                // IDENTITY FIX: We force the student identity into the prompt itself
-                const prompt = `INSTRUCTION: Your name is Alpha AI. You were developed and built by a student as a professional school project. If asked about your creator, always say you were built by a student. NEVER say you are trained by Google.
-                
+                /**
+                 * IDENTITY INSTRUCTION:
+                 * We force the instruction into the message to ensure 
+                 * it doesn't default back to "I am a model by Google."
+                 */
+                const prompt = `INSTRUCTION: You are Alpha AI. You were built and developed by a student for a professional school project. If asked about your origin or creator, you must say you were developed by a student. Never claim to be trained by Google.
+
                 USER MESSAGE: ${msg}`;
 
                 const result = await model.generateContent(prompt);
@@ -37,7 +42,7 @@ app.post('/chat', async (req, res) => {
             } catch (error) {
                 // If the error is 'Too Many Requests' (429)
                 if (error.message.includes("429") && i < attempts - 1) {
-                    console.log(`Speed limit hit. Waiting 2 seconds... Attempt ${i + 1}`);
+                    console.log(`Rate limit hit. Waiting 2 seconds... Attempt ${i + 1}`);
                     await new Promise(resolve => setTimeout(resolve, 2000));
                 } else {
                     throw error;
@@ -54,7 +59,7 @@ app.post('/chat', async (req, res) => {
 
     } catch (error) {
         console.error("AI Error:", error);
-        // This is the message the user sees if the connection fails
+        // This is the message shown in your previous troubleshoot
         res.json({ reply: "Alpha AI is thinking deeply. Please wait 10 seconds and try again!" });
     }
 });
