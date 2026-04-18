@@ -7,24 +7,25 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Initialize the API
+// 1. Initialize with your NEW API Key
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Use the exact model name "gemini-1.5-flash"
+// 2. Setup the model with a stable name
 const model = genAI.getGenerativeModel({ 
     model: "gemini-1.5-flash",
-    systemInstruction: "Your name is Alpha AI Student. You are a helpful educational assistant built by a student."
+    systemInstruction: "Your name is Alpha AI Student. You are a helpful educational assistant built by a student for a school project."
 });
 
+// 3. Home route to confirm server is alive
 app.get("/", (req, res) => {
     res.send("Alpha AI Server is online and ready!");
 });
 
+// 4. Chat route
 app.post("/chat", async (req, res) => {
     try {
         const { message, history } = req.body;
         
-        // Start chat with the model
         const chat = model.startChat({
             history: history || [],
         });
@@ -35,9 +36,9 @@ app.post("/chat", async (req, res) => {
 
         res.json({ reply: text });
     } catch (error) {
-        console.error("DETAILED ERROR:", error);
+        console.error("SERVER ERROR:", error);
         
-        // Specific error for 429 Rate Limit
+        // Handle Rate Limits (429)
         if (error.status === 429) {
             return res.status(429).json({ reply: "Alpha AI is thinking deeply. Please wait 10 seconds!" });
         }
