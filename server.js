@@ -7,42 +7,36 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Initialize the API
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-app.get('/', (req, res) => res.send('Alpha AI is Live!'));
+app.get('/', (req, res) => res.send('Alpha AI is Online!'));
 
 app.post('/chat', async (req, res) => {
     const { message } = req.body;
     
-    // Using 'gemini-1.5-flash-latest' - the most updated stable ID
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
-
-    async function sendMessage(msg, attempts = 3) {
-        for (let i = 0; i < attempts; i++) {
-            try {
-                const prompt = `You are Alpha AI, built by a student for a school project. Answer this: ${msg}`;
-                const result = await model.generateContent(prompt);
-                const response = await result.response;
-                return response.text();
-            } catch (error) {
-                if (error.message.includes("429") && i < attempts - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 6000));
-                } else {
-                    throw error;
-                }
-            }
-        }
-    }
-
     try {
-        if (!message) return res.status(400).json({ reply: "Message is empty." });
-        const replyText = await sendMessage(message);
-        res.json({ reply: replyText });
+        // We use the 'gemini-1.5-flash' stable model
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        const prompt = `INSTRUCTION: You are Alpha AI. You were built by a student for a school project. Always say a student built you. Respond to this: ${message}`;
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+
+        res.json({ reply: text });
     } catch (error) {
-        console.error("FINAL ERROR LOG:", error.message);
-        res.json({ reply: "System is warming up. Please try again in 10 seconds!" });
+        console.error("AI ERROR:", error.message);
+        
+        // If it's a 404, it means the deploy is still updating
+        if (error.message.includes("404")) {
+            res.json({ reply: "Alpha AI is updating its systems. Please wait 30 seconds." });
+        } else {
+            res.json({ reply: "Alpha AI is thinking deeply. Please try again in 10 seconds!" });
+        }
     }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server Online - Model: Flash Latest`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
