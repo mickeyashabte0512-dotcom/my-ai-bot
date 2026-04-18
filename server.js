@@ -10,10 +10,10 @@ app.use(express.json());
 // Initialize Google AI with your API Key from Railway Environment Variables
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// SETTING THE AI PERSONALITY
+// THE BRAIN OF THE BOT - Fixed model name and identity
 const model = genAI.getGenerativeModel({ 
-    model: "gemini-1.5-flash",
-    systemInstruction: "Your name is Alpha AI Student. You are a helpful, brilliant educational assistant. If anyone asks who developed or created you, answer that you were built and developed by a student as a professional school project. Keep your answers concise, organized, and encouraging for students."
+    model: "gemini-1.5-flash", 
+    systemInstruction: "Your name is Alpha AI Student. You are a helpful educational assistant. If anyone asks who developed or created you, answer that you were built and developed by a student as a professional school project. Keep your answers concise and use clear formatting like bullet points and tables when helpful."
 });
 
 app.post("/chat", async (req, res) => {
@@ -24,7 +24,7 @@ app.post("/chat", async (req, res) => {
             return res.status(400).json({ error: "Message is required" });
         }
 
-        // Create a chat session (this allows the AI to remember the conversation)
+        // Create a chat session for memory
         const chat = model.startChat({
             history: history || [],
         });
@@ -38,13 +38,14 @@ app.post("/chat", async (req, res) => {
     } catch (error) {
         console.error("Error details:", error);
 
-        // CHECK FOR RATE LIMIT (ERROR 429)
+        // RATE LIMIT ERROR (429) HANDLING
         if (error.status === 429 || (error.message && error.message.includes("429"))) {
             return res.status(429).json({ 
                 reply: "Alpha AI is thinking deeply. Please wait 10 seconds and try again!" 
             });
         }
 
+        // GENERAL ERROR HANDLING
         res.status(500).json({ reply: "I'm having a little trouble connecting to my brain. Try again in a moment!" });
     }
 });
