@@ -7,14 +7,13 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Initialize DeepSeek using the OpenAI format
+// GROQ configuration
 const openai = new OpenAI({
-    apiKey: process.env.DEEPSEEK_API_KEY, 
-    baseURL: "https://api.deepseek.com"
+    apiKey: process.env.GROQ_API_KEY, 
+    baseURL: "https://api.groq.com/openai/v1" 
 });
 
-// Home route to confirm the server is awake
-app.get('/', (req, res) => res.send('Alpha AI is Online (DeepSeek Engine)!'));
+app.get('/', (req, res) => res.send('Alpha AI is Live on Groq!'));
 
 app.post('/chat', async (req, res) => {
     const { message } = req.body;
@@ -23,34 +22,33 @@ app.post('/chat', async (req, res) => {
 
     try {
         const response = await openai.chat.completions.create({
-            model: "deepseek-chat", // V3.2 Standard Model
+            model: "llama-3.3-70b-versatile", 
             messages: [
                 { 
                     role: "system", 
-                    content: "You are Alpha AI, a helpful assistant built by a student for a school project. Always mention your student creator if asked." 
+                    content: "You are Alpha AI, a helpful assistant built by a student for a school project." 
                 },
                 { role: "user", content: message }
             ],
-            max_tokens: 500
+            max_tokens: 1000
         });
 
         res.json({ reply: response.choices[0].message.content });
 
     } catch (error) {
-        console.error("DEEPSEEK ERROR:", error.message);
+        console.error("GROQ ERROR:", error.message);
         
-        // Handle common API issues
         if (error.message.includes("401")) {
-            res.json({ reply: "Alpha AI Error: Invalid API Key in Railway settings." });
+            res.json({ reply: "Alpha AI Error: Invalid Groq API Key." });
         } else if (error.message.includes("429")) {
-            res.json({ reply: "Alpha AI is busy. Please wait 10 seconds!" });
+            res.json({ reply: "Alpha AI is thinking too fast! Please wait a few seconds." });
         } else {
-            res.json({ reply: "Alpha AI is syncing. Please try again shortly." });
+            res.json({ reply: "Alpha AI is syncing. Please try again in a moment." });
         }
     }
 });
 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`DeepSeek Server running on port ${PORT}`);
+    console.log(`Groq Server running on port ${PORT}`);
 });
