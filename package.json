@@ -1,7 +1,7 @@
 {
-  "name": "alpha-ai-deepseek",
+  "name": "alpha-ai-groq",
   "version": "1.0.0",
-  "description": "Alpha AI school project powered by DeepSeek",
+  "description": "Alpha AI school project powered by Groq",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
