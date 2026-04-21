@@ -1,5 +1,5 @@
 const express = require('express');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const OpenAI = require('openai');
 const cors = require('cors');
 require('dotenv').config();
 
@@ -7,24 +7,50 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// Initialize DeepSeek using the OpenAI format
+const openai = new OpenAI({
+    apiKey: process.env.DEEPSEEK_API_KEY, 
+    baseURL: "https://api.deepseek.com"
+});
 
-app.get('/', (req, res) => res.send('Alpha AI is finally Online!'));
+// Home route to confirm the server is awake
+app.get('/', (req, res) => res.send('Alpha AI is Online (DeepSeek Engine)!'));
 
 app.post('/chat', async (req, res) => {
-    try {
-        // This MUST use gemini-1.5-flash for the most stable connection
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const { message } = req.body;
+    
+    if (!message) return res.status(400).json({ reply: "Message is empty." });
 
-        const result = await model.generateContent(req.body.message);
-        const response = await result.response;
-        res.json({ reply: response.text() });
+    try {
+        const response = await openai.chat.completions.create({
+            model: "deepseek-chat", // V3.2 Standard Model
+            messages: [
+                { 
+                    role: "system", 
+                    content: "You are Alpha AI, a helpful assistant built by a student for a school project. Always mention your student creator if asked." 
+                },
+                { role: "user", content: message }
+            ],
+            max_tokens: 500
+        });
+
+        res.json({ reply: response.choices[0].message.content });
 
     } catch (error) {
-        console.error("DEBUG:", error.message);
-        res.json({ reply: "Alpha AI is syncing. Give it 10 seconds!" });
+        console.error("DEEPSEEK ERROR:", error.message);
+        
+        // Handle common API issues
+        if (error.message.includes("401")) {
+            res.json({ reply: "Alpha AI Error: Invalid API Key in Railway settings." });
+        } else if (error.message.includes("429")) {
+            res.json({ reply: "Alpha AI is busy. Please wait 10 seconds!" });
+        } else {
+            res.json({ reply: "Alpha AI is syncing. Please try again shortly." });
+        }
     }
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, '0.0.0.0', () => console.log(`Stable Server Running`));
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`DeepSeek Server running on port ${PORT}`);
+});
