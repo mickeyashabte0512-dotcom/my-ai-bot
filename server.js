@@ -14,7 +14,7 @@ app.use(cors({
 app.use(express.json());
 
 // Put your real Groq API key string here inside the quotation marks
-const MY_REAL_GROQ_KEY = "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";
+const MY_REAL_GROQ_KEY = "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";
 
 const openai = new OpenAI({
     apiKey: MY_REAL_GROQ_KEY, 
