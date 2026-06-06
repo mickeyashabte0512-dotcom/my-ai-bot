@@ -5,7 +5,7 @@ require('dotenv').config();
 
 const app = express();
 
-// Enable CORS for your frontend origins
+// Enable CORS for all incoming mobile app frontend connections
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST'],
@@ -13,26 +13,34 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Securely initializing OpenAI using Vercel's environment variables
+// Initialize OpenAI library pointing directly to SambaNova's ultra-fast free engine
 const openai = new OpenAI({
-    apiKey: process.env.GROQ_API_KEY, 
-    baseURL: "https://api.groq.com/openai/v1" 
+    apiKey: process.env.SAMBANOVA_API_KEY, 
+    baseURL: "https://api.sambanova.ai/v1" 
 });
 
-// Main root path check
-app.get('/', (req, res) => res.send('Alpha AI is Live on Groq via Vercel!'));
+// Main root path check to see if your Vercel URL is live
+app.get('/', (req, res) => res.send('Alpha AI is Live on SambaNova via Vercel!'));
 
-// Chat route matching your frontend payload
+// Chat route matching your mobile app frontend payload
 app.post('/chat', async (req, res) => {
     const { message } = req.body;
     try {
         const response = await openai.chat.completions.create({
-            model: "llama-3.3-70b-versatile", 
+            model: "Meta-Llama-3.1-70B-Instruct", // Powerful, fast, and free tier model
             messages: [
-                { role: "system", content: "You are Alpha AI, built by a student." },
-                { role: "user", content: message }
+                { 
+                    role: "system", 
+                    content: "You are Alpha AI, a highly smart, supportive, and grounded AI collaborator built to help students study." 
+                },
+                { 
+                    role: "user", 
+                    content: message 
+                }
             ],
         });
+        
+        // Return the structured text response back to your frontend layout
         res.json({ reply: response.choices[0].message.content });
     } catch (error) {
         console.error("API ERROR:", error.message);
@@ -40,7 +48,7 @@ app.post('/chat', async (req, res) => {
     }
 });
 
-// EXPORT THE APP: This tells Vercel how to handle the serverless function routing
+// Export the app config so Vercel handles serverless function compilation routing
 module.exports = app;
 
 const PORT = process.env.PORT || 8080;
