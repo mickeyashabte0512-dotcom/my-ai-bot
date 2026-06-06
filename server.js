@@ -13,11 +13,9 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Put your real Groq API key string here inside the quotation marks
-const MY_REAL_GROQ_KEY = "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";
-
+// Securely initializing OpenAI using Vercel's environment variables
 const openai = new OpenAI({
-    apiKey: MY_REAL_GROQ_KEY, 
+    apiKey: process.env.GROQ_API_KEY, 
     baseURL: "https://api.groq.com/openai/v1" 
 });
 
