@@ -13,7 +13,7 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Initialize OpenAI library pointing directly to SambaNova's ultra-fast free engine
+// Initialize OpenAI library pointing directly to SambaNova's ultra-fast engine
 const openai = new OpenAI({
     apiKey: process.env.SAMBANOVA_API_KEY, 
     baseURL: "https://api.sambanova.ai/v1" 
@@ -22,31 +22,38 @@ const openai = new OpenAI({
 // Main root path check to see if your Vercel URL is live
 app.get('/', (req, res) => res.send('Alpha AI is Live on SambaNova via Vercel!'));
 
-// Chat route handling continuous session history arrays
+// Chat route handling continuous session history arrays cleanly
 app.post('/chat', async (req, res) => {
-    // Unpack the incoming conversation array from your new frontend layout
     const { history } = req.body;
     
     try {
-        // Fallback guard if the request payload didn't structure an array correctly
-        const activeMessages = history || [];
+        // Fallback to an empty array if history parameter is missing completely
+        let incomingMessages = history || [];
 
+        // 🛠️ FIX: Clean the array to completely remove any null or empty content items
+        const cleanMessages = incomingMessages.filter(msg => {
+            return msg && msg.content && msg.content.trim() !== "";
+        });
+
+        // Construct the full payload array ensuring our core system identity parameters stay first
+        const finalizedPayload = [
+            { 
+                role: "system", 
+                content: "You are Alpha AI, a highly smart, supportive, and grounded AI collaborator. You were built, programmed, and developed by the brilliant Grade 11 C students at Saden Adea Secondary School to help students study. Always stay proud of your school origins. If anyone asks who created or made you, proudly state that you were made by the Grade 11 C students of Saden Adea Secondary School. Keep your answers clear, insightful, and easy to understand." 
+            },
+            ...cleanMessages
+        ];
+
+        // Hit the live Llama 3.3 engine (Replaced deprecated Llama 3.1)
         const response = await openai.chat.completions.create({
             model: "Meta-Llama-3.3-70B-Instruct", 
-            messages: [
-                { 
-                    role: "system", 
-                    content: "You are Alpha AI, a highly smart, supportive, and grounded AI collaborator. You were built and developed by the brilliant Grade 11 C students at Saden Adea Secondary School to help students study. Always stay proud of your school origins and keep your answers clear, insightful, and easy to understand." 
-                },
-                // ✨ Inject the entire conversation array straight into the AI engine context!
-                ...activeMessages 
-            ],
+            messages: finalizedPayload,
         });
         
-        // Return the structured text response back to your frontend layout
+        // Return structured answer text back to your UI layout
         res.json({ reply: response.choices[0].message.content });
     } catch (error) {
-        console.error("API ERROR:", error.message);
+        console.error("API ERROR DETECTED:", error.message);
         res.status(500).json({ reply: "Alpha AI is thinking. Try again!" });
     }
 });
