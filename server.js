@@ -27,7 +27,7 @@ app.post('/chat', async (req, res) => {
     const { message } = req.body;
     try {
         const response = await openai.chat.completions.create({
-            model: "Meta-Llama-3.1-70B-Instruct", // Powerful, fast, and free tier model
+            model: "Meta-Llama-3.3-70B-Instruct", // ✨ Updated to active Llama 3.3 model!
             messages: [
                 { 
                     role: "system", 
