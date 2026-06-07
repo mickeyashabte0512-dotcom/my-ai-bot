@@ -1,18 +1,18 @@
 {
-  "name": "alpha-ai-backend",
+  "name": "alpha-backend",
   "version": "1.0.0",
-  "description": "Backend engine room for Alpha AI Student App",
+  "description": "Backend server for Alpha AI Student built by Grade 11 C",
   "main": "server.js",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^4.18.2",
+    "express": "^4.19.2",
     "openai": "^4.28.0"
-  },
-  "engines": {
-    "node": "24.x"
   }
 }
