@@ -27,11 +27,11 @@ app.post('/chat', async (req, res) => {
     const { message } = req.body;
     try {
         const response = await openai.chat.completions.create({
-            model: "Meta-Llama-3.3-70B-Instruct", // ✨ Updated to active Llama 3.3 model!
+            model: "Meta-Llama-3.3-70B-Instruct", 
             messages: [
                 { 
                     role: "system", 
-                    content: "You are Alpha AI, a highly smart, supportive, and grounded AI collaborator built to help students study." 
+                    content: "You are Alpha AI, a highly smart, supportive, and grounded AI collaborator. You were built and developed by the brilliant Grade 11 C students at Saden Adea Secondary School to help students study. Always stay proud of your school origins and keep your answers clear, insightful, and easy to understand." 
                 },
                 { 
                     role: "user", 
