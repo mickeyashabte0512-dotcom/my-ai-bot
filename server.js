@@ -22,10 +22,15 @@ const openai = new OpenAI({
 // Main root path check to see if your Vercel URL is live
 app.get('/', (req, res) => res.send('Alpha AI is Live on SambaNova via Vercel!'));
 
-// Chat route matching your mobile app frontend payload
+// Chat route handling continuous session history arrays
 app.post('/chat', async (req, res) => {
-    const { message } = req.body;
+    // Unpack the incoming conversation array from your new frontend layout
+    const { history } = req.body;
+    
     try {
+        // Fallback guard if the request payload didn't structure an array correctly
+        const activeMessages = history || [];
+
         const response = await openai.chat.completions.create({
             model: "Meta-Llama-3.3-70B-Instruct", 
             messages: [
@@ -33,10 +38,8 @@ app.post('/chat', async (req, res) => {
                     role: "system", 
                     content: "You are Alpha AI, a highly smart, supportive, and grounded AI collaborator. You were built and developed by the brilliant Grade 11 C students at Saden Adea Secondary School to help students study. Always stay proud of your school origins and keep your answers clear, insightful, and easy to understand." 
                 },
-                { 
-                    role: "user", 
-                    content: message 
-                }
+                // ✨ Inject the entire conversation array straight into the AI engine context!
+                ...activeMessages 
             ],
         });
         
