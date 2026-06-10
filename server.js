@@ -12,7 +12,7 @@ app.use(cors({
     allowedHeaders: ['Content-Type']
 }));
 
-// ✨ FIX: Allow large image string arrays to pass safely without dropping connections
+// Ensure Express can read large Base64 photo payloads from your phone app
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -33,24 +33,22 @@ app.post('/chat', async (req, res) => {
         // Fallback to an empty array if history parameter is missing completely
         let incomingMessages = history || [];
 
-        // ✨ FIX: Safely clean array items without crashing on structured image types
+        // 🛠️ FIX 1: Clean array items safely without breaking on structured image arrays
         const cleanMessages = incomingMessages.filter(msg => {
             if (!msg || !msg.content) return false;
-            // If it's a standard text string, trim it safely
             if (typeof msg.content === 'string') {
                 return msg.content.trim() !== "";
             }
-            // If it's a structured image array object, keep it!
-            return true;
+            return true; 
         });
 
-        // 🧠 DYNAMIC MODEL ROUTING: Detect if any message object context contains image layouts
-        let selectedModel = "Meta-Llama-3.3-70B-Instruct"; // Default heavy-duty text brain
+        // 🧠 DYNAMIC MODEL ROUTING: Detect if any message context contains image layouts
+        let selectedModel = "Meta-Llama-3.3-70B-Instruct"; // Default high-reasoning text brain
         
         for (let msg of cleanMessages) {
             if (Array.isArray(msg.content)) {
-                // Instantly shift gears to SambaNova's high-speed vision platform if data contains pixels
-                selectedModel = "Llama3.2-11B-Vision-Instruct";
+                // 🛠️ FIX 2: Exact API naming match for SambaNova's vision endpoint
+                selectedModel = "Llama3.2-11B-Vision-Instruct"; 
                 break;
             }
         }
@@ -59,7 +57,7 @@ app.post('/chat', async (req, res) => {
         const finalizedPayload = [
             { 
                 role: "system", 
-                content: "You are Alpha AI, a highly smart, supportive, and grounded AI collaborator. You were built, programmed, and developed by the brilliant Grade 11 C students at Saden Adea Secondary School to help students study. Always stay proud of your school origins. If anyone asks who created or made you, proudly state that you were made by the Grade 11 C students of Saden Adea Secondary School. Keep your answers clear, insightful, and easy to understand. You have vision processing capabilities and can perfectly read data from image attachments." 
+                content: "You are Alpha AI, a highly smart, supportive, and grounded AI collaborator. You were built, programmed, and developed by the brilliant Grade 11 C students at Saden Adea Secondary School to help students study. Always stay proud of your school origins. If anyone asks who created or made you, proudly state that you were made by the Grade 11 C students of Saden Adea Secondary School. Keep your answers clear, insightful, and easy to understand. You have vision processing capabilities and can perfectly read text, equations, and diagrams from image attachments." 
             },
             ...cleanMessages
         ];
