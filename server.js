@@ -32,16 +32,13 @@ app.post('/chat', async (req, res) => {
     try {
         let incomingMessages = history || [];
 
-        // ✨ FIX: Optimize memory loops so past base64 data streams don't stack up and crash context limits
+        // ✨ OPTIMIZE MEMORY LOOPS: Strip out old, bulky base64 data streams
         const optimizedHistory = incomingMessages.map((msg, index) => {
-            // If it's the very last message in the conversation array, keep it fully intact (current image)
             if (index === incomingMessages.length - 1) {
-                return msg;
+                return msg; // Keep current message fully intact
             }
 
-            // For older history records, if it contains a multimodal array object layout, strip the heavy pixels
             if (Array.isArray(msg.content)) {
-                // Find the text part of that old interaction to preserve context memory
                 const textComponent = msg.content.find(item => item.type === "text");
                 return {
                     role: msg.role,
@@ -52,24 +49,25 @@ app.post('/chat', async (req, res) => {
             return msg;
         });
 
-        // 🧠 DYNAMIC MODEL ROUTING: Check if current prompt context carries image payload parameters
-        let selectedModel = "Meta-Llama-3.3-70B-Instruct"; 
+        // 🧠 DYNAMIC MODEL ROUTING: Detect image structures to select the correct production engine
+        let selectedModel = "Meta-Llama-3.3-70B-Instruct"; // Default text intelligence
         let hasImage = false;
 
-        // Check the newest incoming user request
         const latestMessage = optimizedHistory[optimizedHistory.length - 1];
         if (latestMessage && Array.isArray(latestMessage.content)) {
+            // ✨ ULTIMATE FIX: Switch strictly to SambaNova's official vision model identifier string.
+            // Text models will explode on base64 character limits, while this architecture compresses it safely.
+            selectedModel = "Llama-3.2-11B-Vision-Instruct"; 
             hasImage = true;
         }
 
         let finalizedPayload = [];
 
-        // Handle system instructions safely depending on model requirements
         if (hasImage) {
-            // Pass optimized history directly down the pipe to prevent 400 validation drops
+            // Pass history straight through for the vision model to keep formatting clean
             finalizedPayload = [...optimizedHistory];
         } else {
-            // For standard text chats, keep using your proud system prompt identity
+            // Keep your proud school system identity for standard text conversations
             finalizedPayload = [
                 { 
                     role: "system", 
@@ -79,14 +77,14 @@ app.post('/chat', async (req, res) => {
             ];
         }
 
-        // Call the dynamically chosen model setup from SambaNova
+        // Call SambaNova API
         const response = await openai.chat.completions.create({
             model: selectedModel, 
             messages: finalizedPayload,
             temperature: 0.1 
         });
         
-        // Return structured answer text back to your UI layout
+        // Return text reply back to front-end layout
         res.json({ reply: response.choices[0].message.content });
     } catch (error) {
         console.error("CRITICAL API SERVER ERROR LOG:", error.message);
@@ -101,3 +99,4 @@ const PORT = process.env.PORT || 8080;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server started successfully on port ${PORT}`);
 });
+ 
