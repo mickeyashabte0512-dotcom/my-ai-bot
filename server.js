@@ -32,7 +32,7 @@ app.post('/chat', async (req, res) => {
     try {
         let incomingMessages = history || [];
 
-        // ✨ OPTIMIZE MEMORY LOOPS: Strip out old, bulky base64 data streams
+        // 🧠 OPTIMIZE MEMORY LOOPS: Strip out old, bulky base64 data streams so context doesn't blow up
         const optimizedHistory = incomingMessages.map((msg, index) => {
             if (index === incomingMessages.length - 1) {
                 return msg; // Keep current message fully intact
@@ -50,14 +50,13 @@ app.post('/chat', async (req, res) => {
         });
 
         // 🧠 DYNAMIC MODEL ROUTING: Detect image structures to select the correct production engine
-        let selectedModel = "Meta-Llama-3.3-70B-Instruct"; // Default text intelligence
+        let selectedModel = "Meta-Llama-3.3-70B-Instruct"; // Default ultra-smart text brain
         let hasImage = false;
 
         const latestMessage = optimizedHistory[optimizedHistory.length - 1];
         if (latestMessage && Array.isArray(latestMessage.content)) {
-            // ✨ ULTIMATE FIX: Switch strictly to SambaNova's official vision model identifier string.
-            // Text models will explode on base64 character limits, while this architecture compresses it safely.
-            selectedModel = "Llama-3.2-11B-Vision-Instruct"; 
+            // ✨ THE SOLUTION: Route strictly to SambaNova's stable premium flagship vision tier
+            selectedModel = "Llama-3.2-90B-Vision-Instruct"; 
             hasImage = true;
         }
 
@@ -99,4 +98,3 @@ const PORT = process.env.PORT || 8080;
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server started successfully on port ${PORT}`);
 });
- 
