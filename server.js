@@ -38,8 +38,8 @@ app.post('/chat', async (req, res) => {
 
         for (let msg of incomingMessages) {
             if (Array.isArray(msg.content)) {
-                // ✨ FIX 2: Fixed the missing dash in SambaNova's exact model identifier string
-                selectedModel = "Llama-3.2-11B-Vision-Instruct"; 
+                // ✨ ULTIMATE FIX: Added 'Meta-' to match SambaNova's exact cloud production string
+                selectedModel = "Meta-Llama-3.2-11B-Vision-Instruct"; 
                 hasImage = true;
                 break;
             }
@@ -47,11 +47,9 @@ app.post('/chat', async (req, res) => {
 
         let finalizedPayload = [];
 
-        // ✨ FIX 1: Fix the 400 Invalid Content value bug
-        // SambaNova's vision model handles instructions best when injected as user prompt context 
-        // rather than a top-level system message which triggers the validation crash.
+        // Handle system instructions safely depending on model requirements
         if (hasImage) {
-            // If there's an image, pass the history cleanly without a strict system role object blocking the pipe
+            // If there's an image, pass the history directly down the pipe to prevent 400 validation drops
             finalizedPayload = [...incomingMessages];
         } else {
             // For standard text chats, keep using your proud system prompt identity
@@ -68,14 +66,12 @@ app.post('/chat', async (req, res) => {
         const response = await openai.chat.completions.create({
             model: selectedModel, 
             messages: finalizedPayload,
-            // Low temperature prevents image token processing from hallucinating code blocks
             temperature: 0.1 
         });
         
         // Return structured answer text back to your UI layout
         res.json({ reply: response.choices[0].message.content });
     } catch (error) {
-        // Log the absolute details to your Vercel screen so we know exactly what failed if it happens again
         console.error("CRITICAL API SERVER ERROR LOG:", error.message);
         res.status(500).json({ reply: `Alpha Engine Error: ${error.message}` });
     }
