@@ -34,34 +34,50 @@ app.post('/chat', async (req, res) => {
 
         // 🧠 DYNAMIC MODEL ROUTING: Detect if any message context contains vision data structures
         let selectedModel = "Meta-Llama-3.3-70B-Instruct"; // Default high-reasoning text brain
-        
+        let hasImage = false;
+
         for (let msg of incomingMessages) {
             if (Array.isArray(msg.content)) {
-                selectedModel = "Llama3.2-11B-Vision-Instruct"; 
+                // ✨ FIX 2: Fixed the missing dash in SambaNova's exact model identifier string
+                selectedModel = "Llama-3.2-11B-Vision-Instruct"; 
+                hasImage = true;
                 break;
             }
         }
 
-        // Construct the full payload array ensuring our core system identity parameters stay first
-        const finalizedPayload = [
-            { 
-                role: "system", 
-                content: "You are Alpha AI, a highly smart, supportive, and grounded AI collaborator. You were built, programmed, and developed by the brilliant Grade 11 C students at Saden Adea Secondary School to help students study. Always stay proud of your school origins. If anyone asks who created or made you, proudly state that you were made by the Grade 11 C students of Saden Adea Secondary School. Keep your answers clear, insightful, and easy to understand. You have vision capabilities and can view images." 
-            },
-            ...incomingMessages
-        ];
+        let finalizedPayload = [];
+
+        // ✨ FIX 1: Fix the 400 Invalid Content value bug
+        // SambaNova's vision model handles instructions best when injected as user prompt context 
+        // rather than a top-level system message which triggers the validation crash.
+        if (hasImage) {
+            // If there's an image, pass the history cleanly without a strict system role object blocking the pipe
+            finalizedPayload = [...incomingMessages];
+        } else {
+            // For standard text chats, keep using your proud system prompt identity
+            finalizedPayload = [
+                { 
+                    role: "system", 
+                    content: "You are Alpha AI, a highly smart, supportive, and grounded AI collaborator. You were built, programmed, and developed by the brilliant Grade 11 C students at Saden Adea Secondary School to help students study. Always stay proud of your school origins. If anyone asks who created or made you, proudly state that you were made by the Grade 11 C students of Saden Adea Secondary School. Keep your answers clear, insightful, and easy to understand." 
+                },
+                ...incomingMessages
+            ];
+        }
 
         // Call the dynamically chosen model setup from SambaNova
         const response = await openai.chat.completions.create({
             model: selectedModel, 
             messages: finalizedPayload,
+            // Low temperature prevents image token processing from hallucinating code blocks
+            temperature: 0.1 
         });
         
         // Return structured answer text back to your UI layout
         res.json({ reply: response.choices[0].message.content });
     } catch (error) {
-        console.error("API SERVER LOG ERROR:", error.message);
-        res.status(500).json({ reply: "Alpha AI is experiencing pipeline friction. Try again!" });
+        // Log the absolute details to your Vercel screen so we know exactly what failed if it happens again
+        console.error("CRITICAL API SERVER ERROR LOG:", error.message);
+        res.status(500).json({ reply: `Alpha Engine Error: ${error.message}` });
     }
 });
 
