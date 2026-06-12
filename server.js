@@ -55,8 +55,8 @@ app.post('/chat', async (req, res) => {
 
         const latestMessage = optimizedHistory[optimizedHistory.length - 1];
         if (latestMessage && Array.isArray(latestMessage.content)) {
-            // ✨ THE SOLUTION: Route strictly to SambaNova's stable premium flagship vision tier
-            selectedModel = "Llama-3.2-90B-Vision-Instruct"; 
+            // ✨ THE TRUE 2026 VISION FIX: Switched to SambaNova's active production multimodal model
+            selectedModel = "gemma-4-31B-it"; 
             hasImage = true;
         }
 
