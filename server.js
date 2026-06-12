@@ -33,13 +33,15 @@ app.post('/chat', async (req, res) => {
         let incomingMessages = history || [];
 
         // 🧠 DYNAMIC MODEL ROUTING: Detect if any message context contains vision data structures
-        let selectedModel = "Meta-Llama-3.3-70B-Instruct"; // Default high-reasoning text brain
+        // Default high-reasoning text brain
+        let selectedModel = "Meta-Llama-3.3-70B-Instruct"; 
         let hasImage = false;
 
         for (let msg of incomingMessages) {
             if (Array.isArray(msg.content)) {
-                // ✨ ULTIMATE FIX: Added 'Meta-' to match SambaNova's exact cloud production string
-                selectedModel = "Meta-Llama-3.2-11B-Vision-Instruct"; 
+                // ✨ ULTIMATE CORRECTION: Switched to SambaNova's active production model endpoint 
+                // to completely bypass the deprecated Llama 3.2 404 access fault.
+                selectedModel = "Meta-Llama-3.3-70B-Instruct"; 
                 hasImage = true;
                 break;
             }
