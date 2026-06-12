@@ -32,27 +32,42 @@ app.post('/chat', async (req, res) => {
     try {
         let incomingMessages = history || [];
 
-        // 🧠 DYNAMIC MODEL ROUTING: Detect if any message context contains vision data structures
-        // Default high-reasoning text brain
+        // ✨ FIX: Optimize memory loops so past base64 data streams don't stack up and crash context limits
+        const optimizedHistory = incomingMessages.map((msg, index) => {
+            // If it's the very last message in the conversation array, keep it fully intact (current image)
+            if (index === incomingMessages.length - 1) {
+                return msg;
+            }
+
+            // For older history records, if it contains a multimodal array object layout, strip the heavy pixels
+            if (Array.isArray(msg.content)) {
+                // Find the text part of that old interaction to preserve context memory
+                const textComponent = msg.content.find(item => item.type === "text");
+                return {
+                    role: msg.role,
+                    content: textComponent ? textComponent.text : "Sent an image attachment."
+                };
+            }
+
+            return msg;
+        });
+
+        // 🧠 DYNAMIC MODEL ROUTING: Check if current prompt context carries image payload parameters
         let selectedModel = "Meta-Llama-3.3-70B-Instruct"; 
         let hasImage = false;
 
-        for (let msg of incomingMessages) {
-            if (Array.isArray(msg.content)) {
-                // ✨ ULTIMATE CORRECTION: Switched to SambaNova's active production model endpoint 
-                // to completely bypass the deprecated Llama 3.2 404 access fault.
-                selectedModel = "Meta-Llama-3.3-70B-Instruct"; 
-                hasImage = true;
-                break;
-            }
+        // Check the newest incoming user request
+        const latestMessage = optimizedHistory[optimizedHistory.length - 1];
+        if (latestMessage && Array.isArray(latestMessage.content)) {
+            hasImage = true;
         }
 
         let finalizedPayload = [];
 
         // Handle system instructions safely depending on model requirements
         if (hasImage) {
-            // If there's an image, pass the history directly down the pipe to prevent 400 validation drops
-            finalizedPayload = [...incomingMessages];
+            // Pass optimized history directly down the pipe to prevent 400 validation drops
+            finalizedPayload = [...optimizedHistory];
         } else {
             // For standard text chats, keep using your proud system prompt identity
             finalizedPayload = [
@@ -60,7 +75,7 @@ app.post('/chat', async (req, res) => {
                     role: "system", 
                     content: "You are Alpha AI, a highly smart, supportive, and grounded AI collaborator. You were built, programmed, and developed by the brilliant Grade 11 C students at Saden Adea Secondary School to help students study. Always stay proud of your school origins. If anyone asks who created or made you, proudly state that you were made by the Grade 11 C students of Saden Adea Secondary School. Keep your answers clear, insightful, and easy to understand." 
                 },
-                ...incomingMessages
+                ...optimizedHistory
             ];
         }
 
