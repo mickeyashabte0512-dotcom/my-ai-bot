@@ -45,9 +45,9 @@ app.post('/chat', async (req, res) => {
 
         const latestMessage = optimizedHistory[optimizedHistory.length - 1];
         
-        // -------------------------------------------------------------
-        // ✨ NEW: INTERCEPT IMAGE GENERATION INTENT HERE
-        // -------------------------------------------------------------
+        // =============================================================
+        // 📊 STRATEGIC UPGRADE: STREAMED IMAGE INTERCEPTOR
+        // =============================================================
         let userTextPrompt = "";
         if (latestMessage) {
             if (typeof latestMessage.content === 'string') {
@@ -58,31 +58,39 @@ app.post('/chat', async (req, res) => {
             }
         }
 
-        // Trigger phrases matching your checklist feature
-        const triggerPhrases = ["generate image", "image generation", "draw a diagram", "show a diagram", "generate a diagram"];
-        const wantsImage = triggerPhrases.some(phrase => userTextPrompt.includes(phrase));
+        // Catches variations of keywords, even with common typing slips
+        const imageRegex = /(image|diagram|draw|illustration|picture|sysytem)/i;
+        const wantsImage = imageRegex.test(userTextPrompt);
 
         if (wantsImage && !hasImage) {
-            // Extract keywords, strip out the trigger words, clean spaces to underscores
+            // Aggressively strips filler words out to build a clean target keyword
             let coreKeyword = userTextPrompt
-                .replace(/generate image of|image generation of|generate image|image generation|draw a diagram of|show a diagram of/g, "")
+                .replace(/(cannyou|can\s+you|please|generate|show|draw|of|the|our|out|a|an|image|diagram|illustration|picture|system|sysytem)/gi, "")
                 .trim()
                 .replace(/\s+/g, "_");
 
-            if (!coreKeyword) coreKeyword = "educational_diagram";
+            if (!coreKeyword || coreKeyword === "_") coreKeyword = "educational_diagram";
 
-            // Construct your fast, free Pollinations AI link using an explicit educational aesthetic style
-            const imageUrl = `https://image.pollinations.ai/p/${coreKeyword}_highly_detailed_educational_diagram_style?width=1080&height=1080&nologo=true`;
+            // Forces ultra-clean 2D vector styling without background clutter or messy AI lettering
+            const visualStyleTags = "2d_vector_scientific_diagram_clear_labels_anatomy_textbook_style_isolated_on_white_background_no_real_photographs";
+            const imageUrl = `https://image.pollinations.ai/p/${coreKeyword}_${visualStyleTags}?width=1080&height=1080&nologo=true`;
             
-            // Build a clean markdown image output block
-            const markdownImageString = `### 📊 Generated Diagram\nHere is the visual diagram you requested:\n\n![${coreKeyword.split('_').join(' ')}](${imageUrl})`;
+            const displayTitle = coreKeyword.split('_').join(' ');
+            
+            // Build the final Markdown package
+            const markdownImageString = `### 📊 Labeled Educational Diagram\nHere is the schematic diagram for the **${displayTitle}** you requested:\n\n![${displayTitle}](${imageUrl})\n\n*Figure 1: Comprehensive 2D Schematic of the ${displayTitle}.*`;
 
-            // Send immediately as a standard JSON or basic text packet and cut the line
-            res.setHeader('Content-Type', 'text/plain');
+            // Setup the precise Event Stream pipes for Vercel so the frontend fetch handler loads it instantly
+            res.setHeader('Content-Type', 'text/event-stream');
+            res.setHeader('Cache-Control', 'no-cache, no-transform');
+            res.setHeader('Connection', 'keep-alive');
+            res.setHeader('X-Accel-Buffering', 'no');
+
+            // Dump the Markdown string into the pipeline instantly and seal the hookup
             res.write(markdownImageString);
-            return res.end();
+            return res.end(); 
         }
-        // -------------------------------------------------------------
+        // =============================================================
 
         if (latestMessage && Array.isArray(latestMessage.content)) {
             selectedModel = "gemma-4-31B-it"; 
