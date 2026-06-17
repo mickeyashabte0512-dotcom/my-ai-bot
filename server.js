@@ -44,6 +44,46 @@ app.post('/chat', async (req, res) => {
         let hasImage = false;
 
         const latestMessage = optimizedHistory[optimizedHistory.length - 1];
+        
+        // -------------------------------------------------------------
+        // ✨ NEW: INTERCEPT IMAGE GENERATION INTENT HERE
+        // -------------------------------------------------------------
+        let userTextPrompt = "";
+        if (latestMessage) {
+            if (typeof latestMessage.content === 'string') {
+                userTextPrompt = latestMessage.content.toLowerCase();
+            } else if (Array.isArray(latestMessage.content)) {
+                const textObj = latestMessage.content.find(item => item.type === "text");
+                if (textObj) userTextPrompt = textObj.text.toLowerCase();
+            }
+        }
+
+        // Trigger phrases matching your checklist feature
+        const triggerPhrases = ["generate image", "image generation", "draw a diagram", "show a diagram", "generate a diagram"];
+        const wantsImage = triggerPhrases.some(phrase => userTextPrompt.includes(phrase));
+
+        if (wantsImage && !hasImage) {
+            // Extract keywords, strip out the trigger words, clean spaces to underscores
+            let coreKeyword = userTextPrompt
+                .replace(/generate image of|image generation of|generate image|image generation|draw a diagram of|show a diagram of/g, "")
+                .trim()
+                .replace(/\s+/g, "_");
+
+            if (!coreKeyword) coreKeyword = "educational_diagram";
+
+            // Construct your fast, free Pollinations AI link using an explicit educational aesthetic style
+            const imageUrl = `https://image.pollinations.ai/p/${coreKeyword}_highly_detailed_educational_diagram_style?width=1080&height=1080&nologo=true`;
+            
+            // Build a clean markdown image output block
+            const markdownImageString = `### 📊 Generated Diagram\nHere is the visual diagram you requested:\n\n![${coreKeyword.split('_').join(' ')}](${imageUrl})`;
+
+            // Send immediately as a standard JSON or basic text packet and cut the line
+            res.setHeader('Content-Type', 'text/plain');
+            res.write(markdownImageString);
+            return res.end();
+        }
+        // -------------------------------------------------------------
+
         if (latestMessage && Array.isArray(latestMessage.content)) {
             selectedModel = "gemma-4-31B-it"; 
             hasImage = true;
